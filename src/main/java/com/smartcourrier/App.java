@@ -1,8 +1,8 @@
 package com.smartcourrier;
 
-/**
+/*
  * Hello world!
- *
+ * The problem is I don't have much idea
  */
 public class App 
 {
