@@ -8,6 +8,10 @@ public class Courrier {
         EAST;
     }
 
+    public Courrier(int x, int y){
+
+    }
+
     public void goFoward(){
 
     }
@@ -26,5 +30,9 @@ public class Courrier {
 
     public void searchDestination(){
         
+    }
+
+    public void goToDestination(){
+
     }
 }
