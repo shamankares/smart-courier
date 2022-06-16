@@ -4,6 +4,8 @@ import math
 from enum import Enum
 from typing import List, MutableSequence
 
+size_per_grid = 35
+
 class Direction(Enum):
         NORTH = 90
         SOUTH = 270
@@ -41,25 +43,14 @@ class NodeList(MutableSequence):
         self.list.insert(idx, value)
 
 class Courrier(ttl.Turtle):
-    def __init__(self, direction=Direction.EAST, position=None):
+    def __init__(self, position=None):
         ttl.Turtle.__init__(self)
-        self.ahead = direction
-        self.current_position = position
+        self.hideturtle()
+        self.penup()
+        self.position = position
         self.shape("classic")
-        self.shapesize(1, 1)
-    
-    def goFoward(self):
-        '''
-        Jika hadap utara:
-            pindah ke atas
-        Jika hadap selatan:
-            pindah ke bawah
-        Jika hadap barat:
-            pindah ke kiri
-        Jika hadap timur:
-            pindah ke kanan
-        '''
-        pass
+        self.speed("slowest")
+        self.shapesize(1.5, 1.5)
     
     def turnRight(self):
         self.right(90)
@@ -68,59 +59,66 @@ class Courrier(ttl.Turtle):
         self.left(90)
     
     def preturn(self, current, next):
-        difference = (next[0] - current[0], next[0] - current[0])
-        '''
-        Jika jalur ke bawah:
-            dan hadap ke timur:
-                belokKanan()
-            atau hadap ke barat:
-                belokKiri()
-        jika jalur ke atas:
-            dan hadap ke timur:
-                belokKiri()
-            atau hadap ke barat:
-                belokKanan()
-        jika jalur ke kanan:
-            dan hadap ke utara:
-                belokKiri()
-            atau hadap ke selatan:
-                belokKanan()
-        jika jalur ke kiri:
-        jika jalur berlawanan:
-
-        '''
-        pass
+        difference = (next[0] - current[0], next[1] - current[1])
+        if difference == (-1, 0):
+            self.settiltangle(Direction.NORTH.value)
+        elif difference == (0, -1):
+            self.settiltangle(Direction.WEST.value)
+        elif difference == (1, 0):
+            self.settiltangle(Direction.SOUTH.value)
+        elif difference == (0, 1):
+            self.settiltangle(Direction.EAST.value)
 
     def go(self, route, destination):
-        '''
-        Jika sampai pada tujuan, hadap ke tujuan
-        Jika belum, preturn dan maju
-        '''
-        pass
+        for idx, position in enumerate(route):
+            self.goto(position[1] * size_per_grid, position[0] * size_per_grid)
+            if idx + 1 < len(route):
+                self.preturn(position, route[idx + 1])
+            self.position = position
+        
+        self.preturn(self.position, destination.position)
 
 class Street(ttl.Turtle):
     def __init__(self):
         ttl.Turtle.__init__(self)
+        self.hideturtle()
         self.shape("square")
-        self.color("WHITE")
+        self.shapesize(1.5, 1.5)
+        self.color("#dddddd")
         self.penup()
+        self.speed("fastest")
 
 class Ruko(ttl.Turtle):
     def __init__(self):
         ttl.Turtle.__init__(self)
+        self.hideturtle()
         self.shape("square")
+        self.shapesize(1.5, 1.5)
         self.color("GRAY")
         self.penup()
+        self.speed("fastest")
 
 class Destination(ttl.Turtle):
     def __init__(self, position=None):
         ttl.Turtle.__init__(self)
+        self.hideturtle()
         self.shape("triangle")
         self.position = position
         self.area = (   (position[0], position[1] + 1),
                         (position[0], position[1] - 1),
                         (position[0] + 1, position[1]),
                         (position[0] - 1, position[1]), )
+        self.color("yellow")
+        self.penup()
+        self.speed("fastest")
+
+class TextCursor(ttl.Turtle):
+    def __init__(self):
+        ttl.Turtle.__init__(self)
+        self.penup()
+        self.hideturtle()
+        self.speed("fastest")
+
 
 def searchDestination(maze, start, destination):
 
@@ -151,7 +149,7 @@ def searchDestination(maze, start, destination):
             open_list.remove(best_node)
 
             # Jika node terbaik adalah node sekitar end, kembalikan
-            # jalur dari node tersebut
+            # jalur dari node tersebut.
 
             if best_node == end_node:
                 path = []
@@ -163,7 +161,8 @@ def searchDestination(maze, start, destination):
                 return path
 
             # Jika bukan, maka buat penerus dari node terbaik dan cek
-            # apakah penerus bagian dari open list dan close list
+            # apakah penerus bagian dari open list dan close list. Jika
+            # ada, periksa nilai g-nya.
 
             successors = []
             for new_position in [(1, 0), (0, 1), (0, -1), (-1, 0)]:
@@ -216,34 +215,50 @@ def placeStart(maze):
         start = (math.floor(rand.random() * len(maze)), math.floor(rand.random() * len(maze)))
     return start
     
-
 def placeDestination(maze):
     dest = None
     while dest == None or maze[dest[0]][dest[1]] == 0:
         dest = [math.floor(rand.random() * len(maze)), math.floor(rand.random() * len(maze))]
     return Destination(dest)
 
-def drawMaze(maze):
-    for x in maze:
-        for y in x:
-            pass
+def drawMaze(maze, start, end):
+    jalan = Street()
+    bangunan = Ruko()
+
+    for y, row in enumerate(maze):
+        for x, place in enumerate(row):
+            current_x = x * size_per_grid
+            current_y = y * size_per_grid
+
+            if place == 0:
+                jalan.goto(current_x, current_y)
+                jalan.stamp()
+            elif place == 1:
+                bangunan.goto(current_x, current_y)
+                bangunan.stamp()
+            
+            if start.position[0] == y and start.position[1] == x:
+                start.goto(current_x, current_y)
+                start.showturtle()
+            if end.position[0] == y and end.position[1] == x:
+                end.goto(current_x, current_y)
+                end.stamp()
+
+def msg(txtcursor, string):
+    txtcursor.clear()
+    txtcursor.write(string, False, "left", ("Helvetica", 16, "normal"))
+
 
 def main():
     win = ttl.Screen()
     win.title("Smart Courrier")
-    win.setup(1280, 720)
-    
+    win.setup(510, 550)
+    win.mode("world")
+    win.setworldcoordinates(0,550,510,0)
 
-    # 1. Siapkan kurir, jalan, dan bangunan
-    #kurir = Courrier()
+    txt = TextCursor()
+    txt.sety(550)
 
-    #kurir.turnLeft() ### coba
-    #kurir.turnRight() ### coba
-    ttl.penup() ### coba
-    ttl.goto(90,100) ### coba
-    ttl.shape("square") ### coba
-
-    # 2. Buat list jalur dan maze
     jalur = []
                 #0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 
     maze = [    [0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1], # 0
@@ -253,37 +268,39 @@ def main():
                 [1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1], # 4
                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1], # 5
                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], # 6
-                [1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1], # 7
+                [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1], # 7
                 [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1], # 8
-                [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1], # 9
+                [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1], # 9
                 [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1], # 10
                 [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1], # 11
                 [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0], # 12
-                [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], # 13
-                [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1], # 14
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # 13
+                [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1], # 14
             ]
-    drawMaze(maze)
     start_pos = placeStart(maze)
-    destination_pos_area = placeDestination(maze).area
-    
-    print(start_pos) ### coba
-    print(destination_pos_area) ### coba
+    destination_pos = placeDestination(maze)
+    destination_pos_area = destination_pos.area
+    kurir = Courrier(start_pos)
 
-    # 3. Cari jalur yang sampai di sekitar tujuan
+    msg(txt, "Drawing the maze...")
+    drawMaze(maze, kurir, destination_pos)
+
     route = []
+
+    msg(txt, "Searching for shortest route...")
     for des_pos in destination_pos_area:
         if des_pos[0] in range(len(maze)) and des_pos[1] in range(len(maze)) and maze[des_pos[0]][des_pos[1]] == 0:
             route.append(searchDestination(maze, start_pos, des_pos))
-
-    short_way = searchShortest(route)
-
-    for i in route:
-        print(i)
-    print("Shortest:", short_way)
-
-    # 4. Gerakkan kurir ke sekitar tujuan dan hadapi ke tujuan
-    #       Jika tidak sampai, maka print pesan kesalahan
-
+    if route:
+        msg(txt, "Found the route! Walking to the destination...")
+        short_way = searchShortest(route)
+        #print("Shortest:", short_way)
+        kurir.go(short_way, destination_pos)
+    else:
+        msg(txt, "Weird, they should have at least a route...")
+        txt.delay(100)
+    
+    msg(txt, "Done! Click to exit the program.")
     win.exitonclick()
 
 if __name__ == '__main__':
