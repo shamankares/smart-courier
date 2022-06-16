@@ -2,6 +2,7 @@ import turtle as ttl
 import random as rand
 import math
 from enum import Enum
+from typing import List, MutableSequence
 
 class Direction(Enum):
         NORTH = 90
@@ -11,12 +12,33 @@ class Direction(Enum):
 
 class Node():
     def __init__(self, parent=None, position=None):
-        self.f, self.g, self.h = 0
+        self.f = 0
+        self.g = 0
+        self.h = 0
         self.parent = parent
-        self.position = None
+        self.position = position
     
     def __eq__(self, other):
         return self.position == other.position
+
+class NodeList(MutableSequence):
+    def __init__(self):
+        self.list = list()
+    def __contains__(self, value):
+        for item in self.list:
+            if value.position == item.position:
+                return True
+        return False
+    def __delitem__(self, idx):
+        del self.list[idx]
+    def __getitem__(self, idx):
+        return self.list[idx]
+    def __len__(self):
+        return len(self.list)
+    def __setitem__(self, idx, value):
+        self.list[idx] = value
+    def insert(self, idx, value):
+        self.list.insert(idx, value)
 
 class Courrier(ttl.Turtle):
     def __init__(self, direction=Direction.EAST, position=None):
@@ -69,7 +91,7 @@ class Courrier(ttl.Turtle):
         '''
         pass
 
-    def go():
+    def go(self, route, destination):
         '''
         Jika sampai pada tujuan, hadap ke tujuan
         Jika belum, preturn dan maju
@@ -105,16 +127,16 @@ def searchDestination(maze, start, destination):
         # Siapkan open list, close list, node start, dan node
         # sekitar end. Kemudian, tambahkan node start ke dalam
         # open list.
- 
-        open_list = []
-        close_list = []
+
+        open_list = NodeList()
+        close_list = NodeList()
 
         start_node = Node(None, start)
         end_node = Node(None, destination)
 
-        open_list.append(start)
+        open_list.append(start_node)
 
-        while len(open_list) > 0:
+        while open_list:
  
             # Selama open list tidak kosong, cari node terbaik
             # dalam open list dan masukkan ke dalam close list
@@ -140,7 +162,9 @@ def searchDestination(maze, start, destination):
                 path.reverse()
                 return path
 
-            # Jika bukan, maka buat penerus dari node terbaik
+            # Jika bukan, maka buat penerus dari node terbaik dan cek
+            # apakah penerus bagian dari open list dan close list
+
             successors = []
             for new_position in [(1, 0), (0, 1), (0, -1), (-1, 0)]:
                 node_position = (best_node.position[0] + new_position[0], best_node.position[1] + new_position[1])
@@ -161,23 +185,30 @@ def searchDestination(maze, start, destination):
                 cadidate.h = math.fabs(cadidate.position[0] - end_node.position[0]) + math.fabs(cadidate.position[1] - end_node.position[1])    # Manhattan distance heuiristics
                 cadidate.f = cadidate.g + cadidate.h
 
-                for open_node in open_list:
-                    if cadidate == open_node:
-                        successors.append(open_node)
-                        if open_node.g < cadidate.g:
-                            open_node.parent = best_node
-                            open_node.g = best_node.g + 1
-                            open_node.f = open_node.g + open_node.h
-                
-                for close_node in close_list:
-                    if cadidate.position == close_node.position:
-                        successors.append(close_node)
-                        #if
+                if cadidate in open_list:
+                    open_node = open_list[open_list.index(cadidate)]
+                    if open_node.g < cadidate.g:
+                        open_node.parent = best_node
+                        open_node.g = best_node.g + 1
+                        open_node.f = open_node.g + open_node.h
+                        continue
+                            
+                if cadidate in close_list:
+                    close_node = close_list[close_list.index(cadidate)]
+                    if close_node.g < cadidate.g:
+                        continue
 
-            pass
+                open_list.append(cadidate)
         
         print("There's no way to the destination.")
         return None
+
+def searchShortest(list):
+    shortest = list[0]
+    for item in list:
+        if len(item) < len(shortest):
+            shortest = item
+    return shortest
 
 def placeStart(maze):
     start = None
@@ -233,12 +264,22 @@ def main():
             ]
     drawMaze(maze)
     start_pos = placeStart(maze)
-    destination_pos = placeDestination(maze).area
+    destination_pos_area = placeDestination(maze).area
     
     print(start_pos) ### coba
-    print(destination_pos) ### coba
+    print(destination_pos_area) ### coba
 
     # 3. Cari jalur yang sampai di sekitar tujuan
+    route = []
+    for des_pos in destination_pos_area:
+        if des_pos[0] in range(len(maze)) and des_pos[1] in range(len(maze)) and maze[des_pos[0]][des_pos[1]] == 0:
+            route.append(searchDestination(maze, start_pos, des_pos))
+
+    short_way = searchShortest(route)
+
+    for i in route:
+        print(i)
+    print("Shortest:", short_way)
 
     # 4. Gerakkan kurir ke sekitar tujuan dan hadapi ke tujuan
     #       Jika tidak sampai, maka print pesan kesalahan
