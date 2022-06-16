@@ -99,7 +99,7 @@ class Ruko(ttl.Turtle):
         self.speed("fastest")
 
 class Destination(ttl.Turtle):
-    def __init__(self, position=None):
+    def __init__(self, position=None, color="yellow"):
         ttl.Turtle.__init__(self)
         self.hideturtle()
         self.shape("triangle")
@@ -108,7 +108,7 @@ class Destination(ttl.Turtle):
                         (position[0], position[1] - 1),
                         (position[0] + 1, position[1]),
                         (position[0] - 1, position[1]), )
-        self.color("yellow")
+        self.color(color)
         self.penup()
         self.speed("fastest")
 
@@ -215,13 +215,13 @@ def placeStart(maze):
         start = (math.floor(rand.random() * len(maze)), math.floor(rand.random() * len(maze)))
     return start
     
-def placeDestination(maze):
+def placeDestination(maze, color="yellow"):
     dest = None
     while dest == None or maze[dest[0]][dest[1]] == 0:
         dest = [math.floor(rand.random() * len(maze)), math.floor(rand.random() * len(maze))]
-    return Destination(dest)
+    return Destination(dest, color)
 
-def drawMaze(maze, start, end):
+def drawMaze(maze, start, source, end):
     jalan = Street()
     bangunan = Ruko()
 
@@ -240,9 +240,29 @@ def drawMaze(maze, start, end):
             if start.position[0] == y and start.position[1] == x:
                 start.goto(current_x, current_y)
                 start.showturtle()
+            if source.position[0] == y and source.position[1] == x:
+                source.goto(current_x, current_y)
+                source.showturtle()
             if end.position[0] == y and end.position[1] == x:
                 end.goto(current_x, current_y)
                 end.stamp()
+
+def go_to_flag(maze, courrier, start_pos, des_pos, des_pos_area, txtcursor):
+    route = []
+    msg(txtcursor, "Searching for shortest route...")
+    for pos in des_pos_area:
+        if pos[0] in range(len(maze)) and pos[1] in range(len(maze)) and maze[pos[0]][pos[1]] == 0:
+            route.append(searchDestination(maze, start_pos, pos))
+    if route:
+        msg(txtcursor, "Found the route! Walking to the destination...")
+        short_way = searchShortest(route)
+        #print("Shortest:", short_way)
+        courrier.go(short_way, des_pos)
+        return short_way[-1]
+    else:
+        msg(txtcursor, "Weird, they should have at least a route...")
+        txtcursor.delay(100)
+        return None
 
 def msg(txtcursor, string):
     txtcursor.clear()
@@ -278,27 +298,19 @@ def main():
                 [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1], # 14
             ]
     start_pos = placeStart(maze)
-    destination_pos = placeDestination(maze)
-    destination_pos_area = destination_pos.area
+    source = placeDestination(maze, "white")
+    source_pos_area = source.area
+    destination = placeDestination(maze)
+    destination_pos_area = destination.area
     kurir = Courrier(start_pos)
 
     msg(txt, "Drawing the maze...")
-    drawMaze(maze, kurir, destination_pos)
+    drawMaze(maze, kurir, source, destination)
 
-    route = []
-
-    msg(txt, "Searching for shortest route...")
-    for des_pos in destination_pos_area:
-        if des_pos[0] in range(len(maze)) and des_pos[1] in range(len(maze)) and maze[des_pos[0]][des_pos[1]] == 0:
-            route.append(searchDestination(maze, start_pos, des_pos))
-    if route:
-        msg(txt, "Found the route! Walking to the destination...")
-        short_way = searchShortest(route)
-        #print("Shortest:", short_way)
-        kurir.go(short_way, destination_pos)
-    else:
-        msg(txt, "Weird, they should have at least a route...")
-        txt.delay(100)
+    last_pos = go_to_flag(maze, kurir, start_pos, source, source_pos_area, txt)
+    if last_pos:
+        go_to_flag(maze, kurir, last_pos, destination, destination_pos_area, txt)
+    
     
     msg(txt, "Done! Click to exit the program.")
     win.exitonclick()
