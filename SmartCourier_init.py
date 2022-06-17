@@ -43,7 +43,7 @@ class NodeList(MutableSequence):
     def insert(self, idx, value):
         self.list.insert(idx, value)
 
-class Courrier(ttl.Turtle):
+class Courier(ttl.Turtle):
     def __init__(self, position=None):
         ttl.Turtle.__init__(self)
         self.hideturtle()
@@ -261,7 +261,7 @@ def drawMaze(maze, start, source, end):
                 end.goto(current_x, current_y)
                 end.stamp()
 
-def go_to_flag(maze, courrier, start_pos, des_pos, des_pos_area, txtcursor):
+def go_to_flag(maze, courier, start_pos, des_pos, des_pos_area, txtcursor):
     route = []
     msg(txtcursor, "Searching for shortest route...")
     for pos in des_pos_area:
@@ -273,7 +273,7 @@ def go_to_flag(maze, courrier, start_pos, des_pos, des_pos_area, txtcursor):
         msg(txtcursor, "Found the route! Walking to the destination...")
         short_way = searchShortest(route)
         #print("Shortest:", short_way)
-        courrier.go(short_way, des_pos)
+        courier.go(short_way, des_pos)
         return short_way[-1]
     else:
         msg(txtcursor, "No way to the destination...")
@@ -287,7 +287,7 @@ def msg(txtcursor, string):
 
 def main():
     win = ttl.Screen()
-    win.title("Smart Courrier")
+    win.title("Smart Courier")
     win.setup(510, 550)
     win.mode("world")
     win.setworldcoordinates(0,550,510,0)
@@ -305,7 +305,7 @@ def main():
     destination = placeDestination(maze, "red")
     destination_pos_area = destination.area
     
-    kurir = Courrier(start_pos)
+    kurir = Courier(start_pos)
 
     msg(txt, "Drawing the maze...")
     drawMaze(maze, kurir, source, destination)
