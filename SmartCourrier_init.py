@@ -3,6 +3,7 @@ import random as rand
 import math
 from enum import Enum
 from typing import List, MutableSequence
+from time import sleep
 
 size_per_grid = 35
 
@@ -99,7 +100,7 @@ class Ruko(ttl.Turtle):
         self.speed("fastest")
 
 class Destination(ttl.Turtle):
-    def __init__(self, position=None, color="yellow"):
+    def __init__(self, position=None, color="white"):
         ttl.Turtle.__init__(self)
         self.hideturtle()
         self.shape("triangle")
@@ -199,12 +200,14 @@ def searchDestination(maze, start, destination):
 
                 open_list.append(cadidate)
         
-        print("There's no way to the destination.")
+        #print("There's no way to the destination.")
         return None
 
 def searchShortest(list):
     shortest = list[0]
     for item in list:
+        if item is None:
+            continue
         if len(item) < len(shortest):
             shortest = item
     return shortest
@@ -220,6 +223,17 @@ def placeDestination(maze, color="yellow"):
     while dest == None or maze[dest[0]][dest[1]] == 0:
         dest = [math.floor(rand.random() * len(maze)), math.floor(rand.random() * len(maze))]
     return Destination(dest, color)
+
+def createMaze(row, col):
+    maze = []
+    for y in range(row):
+        maze.append([])
+        for x in range(col):
+            if rand.random() < 0.3:
+                maze[y].append(1)
+            else:
+                maze[y].append(0)
+    return maze
 
 def drawMaze(maze, start, source, end):
     jalan = Street()
@@ -252,7 +266,9 @@ def go_to_flag(maze, courrier, start_pos, des_pos, des_pos_area, txtcursor):
     msg(txtcursor, "Searching for shortest route...")
     for pos in des_pos_area:
         if pos[0] in range(len(maze)) and pos[1] in range(len(maze)) and maze[pos[0]][pos[1]] == 0:
-            route.append(searchDestination(maze, start_pos, pos))
+            result = searchDestination(maze, start_pos, pos)
+            if result:
+                route.append(result)
     if route:
         msg(txtcursor, "Found the route! Walking to the destination...")
         short_way = searchShortest(route)
@@ -260,8 +276,8 @@ def go_to_flag(maze, courrier, start_pos, des_pos, des_pos_area, txtcursor):
         courrier.go(short_way, des_pos)
         return short_way[-1]
     else:
-        msg(txtcursor, "Weird, they should have at least a route...")
-        txtcursor.delay(100)
+        msg(txtcursor, "No way to the destination...")
+        sleep(2.5)
         return None
 
 def msg(txtcursor, string):
@@ -280,28 +296,15 @@ def main():
     txt.sety(550)
 
     jalur = []
-                #0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 
-    maze = [    [0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1], # 0
-                [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], # 1
-                [0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0], # 2
-                [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1], # 3
-                [1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1], # 4
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1], # 5
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], # 6
-                [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1], # 7
-                [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1], # 8
-                [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1], # 9
-                [1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1], # 10
-                [1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1], # 11
-                [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0], # 12
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], # 13
-                [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1], # 14
-            ]
+    maze = createMaze(15, 15)
+
     start_pos = placeStart(maze)
-    source = placeDestination(maze, "white")
+    source = placeDestination(maze, "yellow")
     source_pos_area = source.area
-    destination = placeDestination(maze)
+    
+    destination = placeDestination(maze, "red")
     destination_pos_area = destination.area
+    
     kurir = Courrier(start_pos)
 
     msg(txt, "Drawing the maze...")
