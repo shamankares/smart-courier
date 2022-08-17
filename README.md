@@ -6,11 +6,15 @@ This project is created for Design and Algorithm Analysis final term project. Th
 This program requires **tkinter** module. If you have not installed it in your machine, you should install it before using the program by:
 * Windows: 
   ```
-  > pip install tkinter
+  pip install tkinter
   ```
-* Linux/Mac:
+* Linux:
   ```
-  $ sudo apt-get install python3-tk
+  sudo apt-get install python3-tk
+  ```
+* Mac:
+  ```
+  brew install python-tk
   ```
 
 ## Usage
